@@ -9,7 +9,7 @@ def auth(email,password):
     else:
         return -1
 @st.cache(allow_output_mutation=True)
-def connection():
+def createConnection():
 
 
     conn = psycopg2.connect(host='suleiman.db.elephantsql.com',
@@ -27,7 +27,7 @@ df = get_data()
 st.title("Issue Management System")
 option = st.selectbox('Select your domain/role?',('Reporter', 'Management', 'Employee'))
 st.write('Your selected domian:', option)
-conn = insert_record2(option)
+conn = createConnection()
 st.write('jvndbnmvcb',conn)
 user_email = st.text_input("Email:")
 user_password = st.text_input("Password:")
