@@ -7,11 +7,16 @@ userInfo={}
 def auth(id,password,domain):
     con=createConnection()
     cursor= con.cursor()
-    cursor.execute("SELECT * from "+domain+" where id="+id+" and password="+password";");
-    record = cursor.fetchone()
-    st.write("You are  - ", record);
-    st.write();
-      return record;
+    query="SELECT * from "+domain+" where id="+id+" and password = '"+password+"';"
+    try:
+        cursor.execute(query);
+        record = cursor.fetchone();
+        return record;
+    except Exception as error:
+        cursor.execute("ROLLBACK")
+        con.commit()
+        st.write("Error Occured",error);
+    return -1;
 
 
 @st.cache(allow_output_mutation=True)
@@ -34,16 +39,16 @@ st.write('Your selected domian:', option)
 user_id = st.text_input("ID:")
 user_password = st.text_input("Password:")
 if st.button('add'):
-    result = auth(user_id, user_password,option)
-    if result != -1:
+    result = auth(user_id, user_password,option);
+    if result != -1 and result != None:
         st.write("Welcome user")
     else:
-        st.write("Please check mentioned credentials!")
+        st.write("Please check your Credentials!")
 
 
-def dashboard_reporter:
+def dashboard_reporter():
     st.write("Hello Issue Reporter");
-def dashboard_employee:
-    st.write("Hello Issue Reporter");
-def dashboard_management:
-    st.write("Hello Issue Reporter"); 
+def dashboard_employee():
+    st.write("Hello employee !");
+def dashboard_management():
+    st.write("Hello Chief management"); 
