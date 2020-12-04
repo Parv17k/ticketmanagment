@@ -48,48 +48,6 @@ def query_db(sql: str):
 
     return df
 
-@st.cache
-def load_tickets(user):
-    ##todo: read data for a given user.
-
-    return data
-def show_tickets(user):
-    
-    df = pd.DataFrame([[1, 2], [3, 4]], columns=["col1", "col2"])
-    df.index = [""] * len(df)
-    
-    st.table(df)
-
-
-def dashboard_reporter(user_data):
-    head.title("Issue reporter Dashboard")
-    st.success("Hello Issue Reporter"+", Please scroll down and access your dashboard")
-    show_tickets(user_data)
-def dashboard_employee(user_data):
-    st.write("Hello employee !")
-def dashboard_management(user_data):
-    st.write("Hello Chief management") 
-def auth(id,password,domain):
-    con=createConnection()
-    cursor= con.cursor()
-    query="SELECT * from "+domain+" where id="+id+" and password = '"+password+"';"
-    try:
-        cursor.execute(query)
-        record = cursor.fetchone()
-        if type(record) == tuple:
-            result = list(record)
-            result.append(domain)
-            return   result
-        else:
-            return None
-
-    except Exception as error:
-        cursor.execute("ROLLBACK")
-        con.commit()
-        st.write("Error Occured",error)
-    return -1
-
-
 @st.cache(allow_output_mutation=True)
 def createConnection():
     try:
@@ -103,6 +61,42 @@ def createConnection():
         print("Error connecting to PostgreSQL database", error)
     return None
 
+@st.cache
+def load_tickets(user):
+    ##todo: read data for a given user.
+
+    return data
+def show_tickets(user):
+    
+  #  df = pd.DataFrame([[1, 2], [3, 4]], columns=["col1", "col2"])
+  #  df.index = [""] * len(df)
+
+    st.table(user)
+
+
+def dashboard_reporter(user_data):
+    head.title("Issue reporter Dashboard")
+    st.success("Hello Issue Reporter"+", Please scroll down and access your dashboard")
+    show_tickets(user_data)
+def dashboard_employee(user_data):
+    st.write("Hello employee !")
+def dashboard_management(user_data):
+    st.write("Hello Chief management") 
+def auth(id,password,domain):
+
+    query="SELECT * from "+domain+" where id="+id+" and password = '"+password+"';"
+    try:
+        df= query_db(query)
+        print(df)
+        return df
+    except Exception as error:
+        cursor.execute("ROLLBACK")
+        con.commit()
+        st.write("Error Occured",error)
+    return 
+
+
+
 head.title("Issue Management System")
 option = st.selectbox('Select your domain/role?',('employees', 'issue_reporter', 'chief_management'))
 st.write('Your selected domian:', option)
@@ -111,13 +105,17 @@ user_password = st.text_input("Password:")
 
 if st.button('add'):
     result = auth(user_id, user_password,option)
-    if result != -1 and result != None:
-        if "employees" in result:
+    print(option)
+    if result is not None :
+        result['domain']=option
+        if "employees" == option:
             dashboard_employee(result)
             
-        elif 'issue_reporter' in result:
+            
+        elif 'issue_reporter' == option:
             session_state.name='KJ KOOL'
             dashboard_reporter(result)
+            
         else:
             dashboard_management(result)
     
