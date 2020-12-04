@@ -4,7 +4,10 @@ import psycopg2
 from configparser import ConfigParser
 
 ##import plotly.express as px
-##import SessionState
+import SessionState
+
+session_state = SessionState.get(id=0,name='Parv')
+
 userInfo={}
 head=st.title("")
 
@@ -113,11 +116,13 @@ if st.button('add'):
             dashboard_employee(result)
             
         elif 'issue_reporter' in result:
+            session_state.name='KJ KOOL'
             dashboard_reporter(result)
         else:
             dashboard_management(result)
     
     else:
+        session_state.name="KHALI"
         st.write("Please check your Credentials!")
 
 
@@ -133,7 +138,7 @@ if table_name:
     df = query_db(sql_table)
     st.dataframe(df)
 
-
+"""
 '## Query management_system'
 
 sql_customer_names = 'select name from management_system;'
@@ -144,3 +149,7 @@ if customer_name:
     customer_info = query_db(sql_customer).loc[0]
     c_age, c_city, c_state = customer_info['age'], customer_info['city'], customer_info['state']
     st.write(f"{customer_name} is {c_age}-year old, and lives in {customer_info['city']}, {customer_info['state']}.")
+
+    """
+st.write(session_state.name)
+st.write("We are here")
