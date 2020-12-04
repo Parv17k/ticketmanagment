@@ -1,10 +1,49 @@
 import pandas as pd
 import streamlit as st
 import psycopg2 
+from configparser import ConfigParser
+
 ##import plotly.express as px
 ##import SessionState
 userInfo={}
 head=st.title("")
+
+def get_config(filename='database.ini', section='postgresql'):
+    parser = ConfigParser()
+    parser.read(filename)
+    return {k: v for k, v in parser.items(section)}
+
+@st.cache
+def query_db(sql: str):
+    # print(f'Running query_db(): {sql}')
+    try:
+        db_info = get_config()
+
+    # Connect to an existing database
+        conn = psycopg2.connect(**db_info)
+    except: 
+        conn = createConnection()
+    # Open a cursor to perform database operations
+    cur = conn.cursor()
+
+    # Execute a command: this creates a new table
+    cur.execute(sql)
+
+    # Obtain data
+    data = cur.fetchall()
+    
+    column_names = [desc[0] for desc in cur.description]
+
+    # Make the changes to the database persistent
+    conn.commit()
+
+    # Close communication with the database
+   # cur.close()
+    #conn.close()
+
+    df = pd.DataFrame(data=data, columns=column_names)
+
+    return df
 
 @st.cache
 def load_tickets(user):
@@ -45,7 +84,7 @@ def auth(id,password,domain):
         cursor.execute("ROLLBACK")
         con.commit()
         st.write("Error Occured",error)
-    return -1;
+    return -1
 
 
 @st.cache(allow_output_mutation=True)
@@ -80,3 +119,28 @@ if st.button('add'):
     
     else:
         st.write("Please check your Credentials!")
+
+
+'## Read tables'
+
+sql_all_table_names = "select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';"
+all_table_names = query_db(sql_all_table_names)['relname'].tolist()
+table_name = st.selectbox('Choose a table', all_table_names)
+if table_name:
+    f'Display the table'
+
+    sql_table = f'select * from {table_name};'
+    df = query_db(sql_table)
+    st.dataframe(df)
+
+
+'## Query management_system'
+
+sql_customer_names = 'select name from management_system;'
+customer_names = query_db(sql_customer_names)['name'].tolist()
+customer_name = st.selectbox('Choose a customer', customer_names)
+if customer_name:
+    sql_customer = f"select * from customers where name = '{customer_name}';"
+    customer_info = query_db(sql_customer).loc[0]
+    c_age, c_city, c_state = customer_info['age'], customer_info['city'], customer_info['state']
+    st.write(f"{customer_name} is {c_age}-year old, and lives in {customer_info['city']}, {customer_info['state']}.")
