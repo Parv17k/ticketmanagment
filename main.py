@@ -9,11 +9,20 @@ head=st.title("")
 @st.cache
 def load_tickets(user):
     ##todo: read data for a given user.
+
     return data
+def show_tickets(user):
+    
+    df = pd.DataFrame([[1, 2], [3, 4]], columns=["col1", "col2"])
+    df.index = [""] * len(df)
+    
+    st.table(df)
+
 
 def dashboard_reporter(user_data):
     head.title("Issue reporter Dashboard")
     st.success("Hello Issue Reporter"+", Please scroll down and access your dashboard")
+    show_tickets(user_data)
 def dashboard_employee(user_data):
     st.write("Hello employee !")
 def dashboard_management(user_data):
