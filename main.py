@@ -4,7 +4,7 @@ import psycopg2
 from configparser import ConfigParser
 ##import plotly.express as px
 import SessionState
-session_state = SessionState.get(id=0,name='Parv')
+session_state = SessionState.get(id=0,domain='')
 head=st.title("")
 
 
@@ -95,21 +95,14 @@ def load_tickets(user):
 def show_tickets(user):
     st.table(load_tickets(user))
 
-@st.cache(suppress_st_warning=True)
 def createticket(user_id):
-
-    '##  ticket Creation '
     title = st.text_input("title of the ticket:")
     groupid = st.text_input('Group_id:')
     sql_management = 'select id , name , type from management_system;'
     management=[]
     data = query_db(sql_management)
-    print(data)
-    for t in data.values.tolist():
-        temp = str(t[0]) + '  :' + t[1] + '  -'+ t[2]
-        management.append(temp)
-    ms_id = st.checkbox('Choose a system: ( ID : name  type) ', management)
-    st.write(ms_id)
+    st.table(data)
+    ms_id = st.text_input('Select Management System ID :')
     if st.button('create'):
         st.success('m,cnx,mn,cv')
 
@@ -119,6 +112,7 @@ def createticket(user_id):
 
 def dashboard_reporter(user_data):
     head.title("Issue reporter Dashboard")
+    
     st.success("Hello Issue Reporter '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
     show_tickets(user_data)
     createticket(user_data['id'][0])
@@ -143,30 +137,37 @@ def auth(id,password,domain):
     except Exception as error:
         st.write("Error Occured",error)
     return 
+st.write(session_state.domain)
+if session_state.id == 0:
+    head.title("Issue Management System")
+    option = st.selectbox('Select your domain/role?',('employees', 'issue_reporter', 'chief_management'))
+    st.write('Your selected domian:', option)
+    user_id = st.text_input("ID:")
+    user_password = st.text_input("Password:")
 
-
-
-head.title("Issue Management System")
-option = st.selectbox('Select your domain/role?',('employees', 'issue_reporter', 'chief_management'))
-st.write('Your selected domian:', option)
-user_id = st.text_input("ID:")
-user_password = st.text_input("Password:")
-
-if st.button('add'):
-    result = auth(user_id, user_password,option)
-    #print("Here is auth data",result)
-    if result is not None :
-        result['domain']=option
-        if "employees" == option:
-            dashboard_employee(result)
-        elif 'issue_reporter' == option:
-            dashboard_reporter(result) 
-        elif 'chief_management' == option:
-            dashboard_management(result)
-    
-    else:
-        st.write("Please check your Credentials!")
-
+    if st.button('add'):
+        result = auth(user_id, user_password,option)
+        #print("Here is auth data",result)
+        if result is not None :
+            result['domain']=option
+            session_state.id=result['id'][0]
+            session_state.domain=result
+            if "employees" == option:
+                dashboard_employee(result)
+            elif 'issue_reporter' == option:
+                dashboard_reporter(result) 
+            elif 'chief_management' == option:
+                dashboard_management(result)
+        
+        else:
+            st.write("Please check your Credentials!")
+else:
+    if "employees" == session_state.domain["domain"][0]:
+        dashboard_employee(session_state.domain)
+    elif 'issue_reporter' == session_state.domain["domain"][0]:
+        dashboard_reporter(session_state.domain) 
+    elif 'chief_management' == session_state.domain["domain"][0]:
+        dashboard_management(resession_state.domain)
 
 '## Read tables'
 
