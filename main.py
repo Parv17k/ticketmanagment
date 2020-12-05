@@ -7,7 +7,6 @@ import SessionState
 session_state = SessionState.get(id=0,domain='')
 head=st.title("")
 
-
 def get_config(filename='database.ini', section='postgresql'):
     parser = ConfigParser()
     parser.read(filename)
@@ -15,7 +14,7 @@ def get_config(filename='database.ini', section='postgresql'):
 
     
 @st.cache(allow_output_mutation=True)
-def query_db(sql: str):
+def query_db(sql: str,flag= False):
     # print(f'Running query_db(): {sql}')
     conn=None
     try:
@@ -31,26 +30,23 @@ def query_db(sql: str):
         
        # Execute a command: this creates a new table
         cur.execute(sql)
-
-        # Obtain data
-        data = cur.fetchall()
-        
-        column_names = [desc[0] for desc in cur.description]
-
-        # Make the changes to the database persistent
         conn.commit()
 
-        # Close communication with the database
-    # cur.close()
-        #conn.close()
-
-        df = pd.DataFrame(data=data, columns=column_names)
-        return df
+        # Obtain data
+        if flag== False:
+            data = cur.fetchall()
+        
+            column_names = [desc[0] for desc in cur.description]
+            df = pd.DataFrame(data=data, columns=column_names)
+            return df
+        return "done"       
+        
 
     except Exception as error:
         cur.execute("ROLLBACK")
         conn.commit()
-        st.write("Error Occured",error)
+        cur.close()
+        conn.close()
     return None
 
     
@@ -74,20 +70,19 @@ def load_tickets(user):
 
     if user['domain'][0]=='issue_reporter':
         
-        sql = """select i.name, et.ticket_id, et.start_time, et.end_time, et.title, et.issuer_id,
-         et.assigned_to_id, et.name as emp_name from (select  *from tickets t left join 
-         employees  e on issuer_id = """+str(user['id'][0])+""") et left join issue_reporter i on i.id = et.issuer_id;"""
+        sql = f"""select i.name, et.ticket_id, et.start_time, et.end_time, et.title, et.issuer_id,
+         et.assigned_to_id, et.name as emp_name from (select  * from tickets t left join employees  e on t.assigned_to_id  = e.id)
+         et , issue_reporter i where i.id = et.issuer_id and  i.id={str(user['id'][0])} ;"""
     elif user['domain'][0]=='employees':
-        sql = """select i.name, et.ticket_id, et.start_time, et.end_time, 
+        sql =f"""select i.name, et.ticket_id, et.start_time, et.end_time, 
         et.title, et.issuer_id, et.assigned_to_id, et.name as emp_name from
-         (select  * from tickets t left join employees  e on e.id ="""+str(user['id'][0])+""" )
+         (select  * from tickets t left join employees  e on e.id ={str(user['id'][0])} )
          et left join issue_reporter i on i.id = et.issuer_id;"""
  
     else:
-        sql= """
-        select temp.title, m.name as manager_name , temp.name as management_system,temp.type as department
+        sql= f"""select temp.title, m.name as manager_name , temp.name as management_system,temp.type as department
         from ( select  t.title, ms.name,t.ms_id,ms.type from tickets t right join management_system ms on t.ms_id=ms.id) 
-        temp ,chief_management m where m.id = temp.ms_id  and  m.id = """+str(user['id'][0])+""" ;"""
+        temp ,chief_management m where m.id = temp.ms_id  and  m.id = {str(user['id'][0])} ;"""
     data=query_db(sql)
     #print(data)
     return data
@@ -102,11 +97,22 @@ def createticket(user_id):
     management=[]
     data = query_db(sql_management)
     st.table(data)
-    ms_id = st.text_input('Select Management System ID :')
+    for t in data.values.tolist():
+        temp = str(t[0]) + '  :' + t[1] + '  -'+ t[2]
+        management.append(temp)
+    ms_id = st.selectbox('Choose a system: ( ID : name  type) ', management).split(':',1)[0]
+    #ms_id = st.text_input('Select Management System ID :')
     if st.button('create'):
-        st.success('m,cnx,mn,cv')
-
-
+        
+        sql = f"insert into tickets (group_id, ms_id, title, issuer_id) values({groupid}, {ms_id},'{title}', {user_id} );"
+        st.write(sql)
+        result= query_db(sql,True)
+        if result=='True':
+            st.success('Ticket is created')
+            st.write(result)
+        else: st.error('error occured in SQL')
+       
+        
 
 
 
