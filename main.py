@@ -13,7 +13,8 @@ def get_config(filename='database.ini', section='postgresql'):
     parser.read(filename)
     return {k: v for k, v in parser.items(section)}
 
-@st.cache
+    
+@st.cache(allow_output_mutation=True)
 def query_db(sql: str):
     # print(f'Running query_db(): {sql}')
     conn=None
@@ -70,51 +71,74 @@ def createConnection():
 @st.cache
 def load_tickets(user):
     sql=''
-    print("You are ",user)
+
     if user['domain'][0]=='issue_reporter':
         
-        sql = """select i.name, et.ticket_id, et.start_time, et.end_time, et.title, et.issuer_id, et.assigned_to_id, et.name as emp_name from
-         (select  *
-        from tickets t left join employees  e on issuer_id = """+str(user['id'][0])+""")
-         et left join issue_reporter i on i.id = et.issuer_id;"""
+        sql = """select i.name, et.ticket_id, et.start_time, et.end_time, et.title, et.issuer_id,
+         et.assigned_to_id, et.name as emp_name from (select  *from tickets t left join 
+         employees  e on issuer_id = """+str(user['id'][0])+""") et left join issue_reporter i on i.id = et.issuer_id;"""
     elif user['domain'][0]=='employees':
-        sql = """select i.name, et.ticket_id, et.start_time, et.end_time, et.title, et.issuer_id, et.assigned_to_id, et.name as emp_name from
-         (select  *
-        from tickets t left join employees  e on e.id ="""+str(user['id'][0])+""" )
+        sql = """select i.name, et.ticket_id, et.start_time, et.end_time, 
+        et.title, et.issuer_id, et.assigned_to_id, et.name as emp_name from
+         (select  * from tickets t left join employees  e on e.id ="""+str(user['id'][0])+""" )
          et left join issue_reporter i on i.id = et.issuer_id;"""
  
     else:
         sql= """
         select temp.title, m.name as manager_name , temp.name as management_system,temp.type as department
-        from ( select  t.title, ms.name,t.ms_id,ms.type from tickets t right join management_system ms on t.ms_id=ms.id) temp ,chief_management m
-        where m.id = temp.ms_id  and  m.id = """+str(user['id'][0])+""" ;"""
-        print(sql)
+        from ( select  t.title, ms.name,t.ms_id,ms.type from tickets t right join management_system ms on t.ms_id=ms.id) 
+        temp ,chief_management m where m.id = temp.ms_id  and  m.id = """+str(user['id'][0])+""" ;"""
     data=query_db(sql)
-    print(data)
+    #print(data)
     return data
 
 def show_tickets(user):
     st.table(load_tickets(user))
+
+@st.cache(suppress_st_warning=True)
+def createticket(user_id):
+
+    '##  ticket Creation '
+    title = st.text_input("title of the ticket:")
+    groupid = st.text_input('Group_id:')
+    sql_management = 'select id , name , type from management_system;'
+    management=[]
+    data = query_db(sql_management)
+    print(data)
+    for t in data.values.tolist():
+        temp = str(t[0]) + '  :' + t[1] + '  -'+ t[2]
+        management.append(temp)
+    ms_id = st.checkbox('Choose a system: ( ID : name  type) ', management)
+    st.write(ms_id)
+    if st.button('create'):
+        st.success('m,cnx,mn,cv')
+
+
+
 
 
 def dashboard_reporter(user_data):
     head.title("Issue reporter Dashboard")
     st.success("Hello Issue Reporter '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
     show_tickets(user_data)
+    createticket(user_data['id'][0])
+  
+
+
 def dashboard_employee(user_data):
-     head.title("Employee Dashboard")
-     st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
-     show_tickets(user_data)
+    head.title("Employee Dashboard")
+    st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
+    show_tickets(user_data)
 def dashboard_management(user_data):
     head.title("Management Dashboard")
-     st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
-     show_tickets(user_data)
+    st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
+    show_tickets(user_data)
 def auth(id,password,domain):
 
     query="SELECT * from "+domain+" where id="+id+" and password = '"+password+"';"
     try:
         df= query_db(query)
-        print(df)
+
         return df
     except Exception as error:
         st.write("Error Occured",error)
@@ -130,7 +154,7 @@ user_password = st.text_input("Password:")
 
 if st.button('add'):
     result = auth(user_id, user_password,option)
-    print("Here is auth data",result)
+    #print("Here is auth data",result)
     if result is not None :
         result['domain']=option
         if "employees" == option:
@@ -142,3 +166,21 @@ if st.button('add'):
     
     else:
         st.write("Please check your Credentials!")
+
+
+'## Read tables'
+
+sql_all_table_names = "select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';"
+all_table_names = query_db(sql_all_table_names)['relname'].tolist()
+table_name = st.selectbox('Choose a table', all_table_names)
+if table_name:
+    f'Display the table'
+
+    sql_table = f'select * from {table_name};'
+    df = query_db(sql_table)
+    st.dataframe(df)
+
+
+
+
+
