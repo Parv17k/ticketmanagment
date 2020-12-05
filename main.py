@@ -211,7 +211,7 @@ else:
     elif 'issue_reporter' == session_state.domain["domain"][0]:
         dashboard_reporter(session_state.domain) 
     elif 'chief_management' == session_state.domain["domain"][0]:
-        dashboard_management(resession_state.domain)
+        dashboard_management(session_state.domain)
 
 '## Read tables'
 
