@@ -102,9 +102,11 @@ def dashboard_reporter(user_data):
     st.success("Hello Issue Reporter '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
     show_tickets(user_data)
 def dashboard_employee(user_data):
+     head.title("Employee Dashboard")
      st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
      show_tickets(user_data)
 def dashboard_management(user_data):
+    head.title("Management Dashboard")
      st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
      show_tickets(user_data)
 def auth(id,password,domain):
