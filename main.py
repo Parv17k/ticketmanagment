@@ -70,19 +70,32 @@ def load_tickets(user):
 
     if user['domain'][0]=='issue_reporter':
         
-        sql = f"""select i.name, et.ticket_id, et.start_time, et.end_time, et.title, et.issuer_id,
-         et.assigned_to_id, et.name as emp_name from (select  * from tickets t left join employees  e on t.assigned_to_id  = e.id)
+        sql = f"""select i.name, et.ticket_id,et.status, et.start_time, et.end_time, et.title, et.issuer_id,
+         et.assigned_to_id, et.name as emp_name from (select  * from 
+         (select * from
+         tickets,ticket_status
+         where tickets.status_id = ticket_status.id
+         ) t
+         left join employees  e on t.assigned_to_id  = e.id)
          et , issue_reporter i where i.id = et.issuer_id and  i.id={str(user['id'][0])} ;"""
+
     elif user['domain'][0]=='employees':
         sql =f"""select i.name, et.ticket_id, et.start_time, et.end_time, 
         et.title, et.issuer_id, et.assigned_to_id, et.name as emp_name from
-         (select  * from tickets t left join employees  e on e.id ={str(user['id'][0])} )
+         (select  * from (select * from
+         tickets,ticket_status
+         where tickets.status_id = ticket_status.id
+         ) t left join employees  e on e.id ={str(user['id'][0])} )
          et left join issue_reporter i on i.id = et.issuer_id;"""
  
     else:
         sql= f"""select temp.title, m.name as manager_name , temp.name as management_system,temp.type as department
-        from ( select  t.title, ms.name,t.ms_id,ms.type from tickets t right join management_system ms on t.ms_id=ms.id) 
+        from ( select  t.title, ms.name,t.ms_id,ms.type from (select * from
+         tickets,ticket_status
+         where tickets.status_id = ticket_status.id
+         ) t right join management_system ms on t.ms_id=ms.id) 
         temp ,chief_management m where m.id = temp.ms_id  and  m.id = {str(user['id'][0])} ;"""
+    
     data=query_db(sql)
     #print(data)
     return data
@@ -104,10 +117,10 @@ def createticket(user_id):
     #ms_id = st.text_input('Select Management System ID :')
     if st.button('create'):
         
-        sql = f"insert into tickets (group_id, ms_id, title, issuer_id) values({groupid}, {ms_id},'{title}', {user_id} );"
+        sql = f"insert into tickets (group_id, ms_id, title, issuer_id,status_id) values({groupid}, {ms_id},'{title}', {user_id},1 );"
         st.write(sql)
         result= query_db(sql,True)
-        if result=='True':
+        if result=='done':
             st.success('Ticket is created')
             st.write(result)
         else: st.error('error occured in SQL')
@@ -186,8 +199,3 @@ if table_name:
     sql_table = f'select * from {table_name};'
     df = query_db(sql_table)
     st.dataframe(df)
-
-
-
-
-
