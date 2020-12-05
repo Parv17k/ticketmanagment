@@ -1,11 +1,35 @@
 import pandas as pd
 import streamlit as st
 import psycopg2 
+import datetime
 from configparser import ConfigParser
 ##import plotly.express as px
 import SessionState
 session_state = SessionState.get(id=0,domain='')
 head=st.title("")
+
+
+def submit_feedback(user):
+    st.title("Add a Feedback:")
+    sql_tickets = f"select ticket_id from tickets where issuer_id={user['id'][0]};"
+    tickets=[]
+    data = query_db(sql_tickets)
+    for t in data.values.tolist():
+        temp = str(t[0])
+        tickets.append(temp)
+    ticket_id = st.selectbox('Choose a system: ( ID : name  type) ', tickets)
+
+    points = st.text_input("Rate out of 10:")
+    feedback = st.text_input('feedback:')
+    if st.button('Submit Feedback'):
+        sql = f"insert into feedbacks (points, remark, time_stamp, feedback_by,ticket_id) values({points}, '{feedback}','{datetime.datetime.now()}',{user['id'][0]} ,{ticket_id} );"
+        result= query_db(sql,True)
+        if result=='done':
+            st.success('Feedback submitted!!')
+            st.write(result)
+        else: st.error('error occured in SQL')
+
+
 
 def get_config(filename='database.ini', section='postgresql'):
     parser = ConfigParser()
@@ -43,10 +67,10 @@ def query_db(sql: str,flag= False):
         
 
     except Exception as error:
+        st.write(error)
         cur.execute("ROLLBACK")
         conn.commit()
         cur.close()
-        conn.close()
     return None
 
     
@@ -135,6 +159,7 @@ def dashboard_reporter(user_data):
     st.success("Hello Issue Reporter '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
     show_tickets(user_data)
     createticket(user_data['id'][0])
+    submit_feedback(user_data)
   
 
 
