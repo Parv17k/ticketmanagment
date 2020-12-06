@@ -103,7 +103,7 @@ def showFeedback(user):
     data=query_db(sql)
     st.table(data)
 
-@st.cache
+
 def load_tickets(user):
     sql=''
 
@@ -159,7 +159,6 @@ def createticket(user_id):
 
       
 def updatestatus(user):
-    st.write("I am in")
     sql = f"""select tickets.ticket_id,ticket_status.status, tickets.title from tickets,ticket_status where tickets.status_id = ticket_status.id and assigned_to_id  = {str(user['id'][0])};"""
 
     data = query_db(sql)
@@ -186,7 +185,37 @@ def updatestatus(user):
             st.success('Ticket is updated')
         else: st.error('error occured in SQL')
         
-
+def update_employee(user):
+    
+    sql = f"""select ticket_id ,title  from tickets where assigned_to_id is null and 
+            ms_id in (select id from management_system where managerid = {str(user['id'][0])});"""
+    
+    data = query_db(sql)
+    if df.empty== False :
+        st.subheader('Ticket that dont have any employee assigned')
+        tickets=[]
+        for t in data.values.tolist():
+                temp = f'{str(t[0])} : {t[1]}'
+                tickets.append(temp)
+        
+        selT=st.selectbox('select the ticket for which want to update Employess',tickets)
+        sql1= f'select id,name from employees where ms_id in (select id from management_system where managerid= {str(user["id"][0])}  );'
+        data1 = query_db(sql1)
+        statuss=[]
+        for t in data1.values.tolist():
+                temp = f'{str(t[0])}  : {t[1]}'
+                statuss.append(temp)
+        ent= f'select the the user for the ticket {selT}' 
+        selE=st.selectbox(ent,statuss)
+        if st.button('update status'):
+            selE=selE.split(":")[0]
+            selT=selT.split(":")[0]
+            sq=f""" update tickets set assigned_to_id = {selE},start_time ='{datetime.datetime.now()}',response_sla ='true' where ticket_id ={selT};"""
+            print(sq)
+            result= query_db(sq,True)
+            if result=='done':
+                st.success('Ticket is updated')
+            else: st.error('error occured in SQL')
 
 def dashboard_reporter(user_data):
     head.title("Issue reporter Dashboard")
@@ -203,7 +232,6 @@ def dashboard_employee(user_data):
     st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
     show_tickets(user_data)
     updatestatus(user_data)
-    st.write("I am down")
     if st.button('show feedback table for the user'):
         showFeedback(user_data)
     
@@ -211,6 +239,7 @@ def dashboard_management(user_data):
     head.title("Management Dashboard")
     st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
     show_tickets(user_data)
+    update_employee(user_data)
     if st.button('show feedback table for the user'):
         showFeedback(user_data)
 
@@ -271,4 +300,6 @@ if table_name:
 
     sql_table = f'select * from {table_name};'
     df = query_db(sql_table)
+   # print(df.head(1))
+    st.write(df.head(1))
     st.dataframe(df)
