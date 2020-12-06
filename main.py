@@ -7,6 +7,8 @@ import graphviz as graphviz
 from configparser import ConfigParser
 import SessionState
 import matplotlib.pyplot as plt
+import plotly.tools
+
 session_state = SessionState.get(id=0,data=pd.DataFrame())
 head=st.title("")
 
@@ -109,7 +111,7 @@ def show_cost(user):
     st.dataframe(data)
     print(data)
     fig=plt.figure()
-    plt.plot(data['penalty'], 'r--', data['amount'], 'bs', data['profit'] 'g^')
+    plt.plot(data['penalty'], 'r--', data['amount'], 'bs', data['profit'], 'g^')
     st.plotly_chart(fig)
     
 def showFeedback(user):
