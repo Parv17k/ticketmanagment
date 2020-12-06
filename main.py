@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import psycopg2 
 import datetime
+import numpy as np
 from configparser import ConfigParser
 ##import plotly.express as px
 import SessionState
@@ -50,7 +51,19 @@ def query_db(sql: str,flag= False):
         cur.execute("ROLLBACK")
         conn.commit()
     return None
-
+def show_cost(user):
+    st.title("Cost Overview : for your Management Systems")
+    sql = f"""
+    select tickets.ticket_id,costs.amount,costs.penalty,(amount - penalty) as profit 
+    from costs,tickets where tickets.ticket_id=costs.ticket_id and tickets.ticket_id in
+    (select ticket_id from 
+    tickets where ms_id in (select id from management_system where managerid={user['id'][0]}));
+    """
+    data=query_db(sql)
+    data=data.set_index('ticket_id')
+    st.dataframe(data)
+    print(data)
+    st.line_chart(data)
 @st.cache(allow_output_mutation=True)
 def createConnection():
     try:
@@ -241,6 +254,7 @@ def dashboard_management(user_data):
     update_employee(user_data)
     if st.button('show feedback table for the user'):
         showFeedback(user_data)
+    show_cost(user_data)
 
 def auth(id,password,domain):
 
