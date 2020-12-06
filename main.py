@@ -3,26 +3,21 @@ import streamlit as st
 import psycopg2 
 import datetime
 import numpy as np
+import graphviz as graphviz
 from configparser import ConfigParser
-##import plotly.express as px
 import SessionState
 session_state = SessionState.get(id=0,data=pd.DataFrame())
 head=st.title("")
-
 
 def get_config(filename='database.ini', section='postgresql'):
     parser = ConfigParser()
     parser.read(filename)
     return {k: v for k, v in parser.items(section)}
 
-    
-#@st.cache(allow_output_mutation=True)
 def query_db(sql: str,flag= False):
-    # print(f'Running query_db(): {sql}')
     conn=None
     try:
         db_info = get_config()
-
     # Connect to an existing database
         conn = psycopg2.connect(**db_info)
     except: 
@@ -87,7 +82,6 @@ def createConnection():
     return None
 
 def submit_feedback(user):
-    
     sql_tickets = f"""select distinct * from tickets t where issuer_id ={user['id'][0]} 
                     and t.ticket_id not in (select ticket_id from feedbacks 
                     where feedback_by = {user['id'][0]});"""
@@ -171,7 +165,6 @@ def createticket(user_id):
         temp = str(t[0]) + '  :' + t[1] + '  -'+ t[2]
         management.append(temp)
     ms_id = st.selectbox('Choose a system: ( ID : name  type) ', management).split(':',1)[0]
-    #ms_id = st.text_input('Select Management System ID :')
     if st.button('create'):
         
         sql = f"insert into tickets (group_id, ms_id, title, issuer_id,status_id) values({groupid}, {ms_id},'{title}', {user_id},1 );"
@@ -207,7 +200,30 @@ def updatestatus(user):
         if result=='done':
             st.success('Ticket is updated')
         else: st.error('error occured in SQL')
+
+
+def visualize_tickets(user):
+    sql1 = f"""select ticket_id ,title  from tickets where 
+            ms_id in (select id from management_system where managerid = {str(user['id'][0])});"""
+    data = query_db(sql1)
+    if data.empty== False :
+        st.subheader('Graph a ticket')
+        tickets=[]
+        for t in data.values.tolist():
+                temp = f'{str(t[0])} : {t[1]}'
+                tickets.append(temp)
         
+        selT=st.selectbox('Select Ticket for a graph:',tickets)
+        selT=selT.split(":")[0]
+    sql= f"""select issue_reporter.name as reporter,temp.title,temp.issuer_id as issuer_id,temp.emp_id,temp.emp_name from (select t.issuer_id,t.title,t.assigned_to_id as emp_id,e.name as emp_name from tickets t,employees e where e.id = t.assigned_to_id and t.ticket_id={selT}) temp, issue_reporter where issue_reporter.id=temp.issuer_id;"""
+    data = query_db(sql)
+    st.dataframe(data)
+    graph = graphviz.Digraph()
+    graph.edge("reporter - "+str(data['reporter'][0]),"ticket - "+ str(data['title'][0]))
+    graph.edge("worker - "+str(data['emp_name'][0]), "ticket - "+str(data['title'][0]))
+    st.graphviz_chart(graph)
+    
+
 def update_employee(user):
     sql = f"""select ticket_id ,title  from tickets where assigned_to_id is null and 
             ms_id in (select id from management_system where managerid = {str(user['id'][0])});"""
@@ -265,6 +281,7 @@ def dashboard_management(user_data):
         showFeedback(user_data)
     show_cost(user_data)
     show_ms_profit()
+    visualize_tickets(user_data)
 
 def auth(id,password,domain):
 
