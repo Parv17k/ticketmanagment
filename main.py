@@ -6,6 +6,7 @@ import numpy as np
 import graphviz as graphviz
 from configparser import ConfigParser
 import SessionState
+import matplotlib.pyplot as plt
 session_state = SessionState.get(id=0,data=pd.DataFrame())
 head=st.title("")
 
@@ -47,27 +48,7 @@ def query_db(sql: str,flag= False):
         conn.commit()
     return None
 
-def show_ms_profit():
-    st.title("Profit/Loss Overview : All Departement")
-    sql="""
-    select sum(amount - penalty) as profit_dept, int.name from costs,(select t.ticket_id,m.name as name from tickets t,management_system m where m.id=t.ms_id ) int where int.ticket_id=costs.ticket_id group by int.name;
-    """
-    data=query_db(sql)
-    st.dataframe(data)
 
-def show_cost(user):
-    st.title("Cost Overview : for your Management Systems")
-    sql = f"""
-    select tickets.ticket_id,costs.amount,costs.penalty,(amount - penalty) as profit 
-    from costs,tickets where tickets.ticket_id=costs.ticket_id and tickets.ticket_id in
-    (select ticket_id from 
-    tickets where ms_id in (select id from management_system where managerid={user['id'][0]}));
-    """
-    data=query_db(sql)
-    data=data.set_index('ticket_id')
-    st.dataframe(data)
-    print(data)
-    st.line_chart(data)
 @st.cache(allow_output_mutation=True)
 def createConnection():
     try:
@@ -106,6 +87,31 @@ def submit_feedback(user):
             else: st.error('error occured in SQL')
     else: st.write('All tickets feedback have been assigned for the tickets created by you')
 
+def show_ms_profit():
+    st.title("Profit/Loss Overview : All Department")
+    sql=f"""select sum(amount - penalty) as profit_dept, int.name from costs,
+    (select t.ticket_id,m.name as name from tickets t,management_system m where m.id=t.ms_id )
+     int where int.ticket_id=costs.ticket_id group by int.name;
+    """
+    data=query_db(sql)
+    st.dataframe(data)
+
+def show_cost(user):
+    st.title("Cost Overview : for your Management Systems")
+    sql = f"""
+    select tickets.ticket_id,costs.amount,costs.penalty,(amount - penalty) as profit 
+    from costs,tickets where tickets.ticket_id=costs.ticket_id and tickets.ticket_id in
+    (select ticket_id from 
+    tickets where ms_id in (select id from management_system where managerid={user['id'][0]}));
+    """
+    data=query_db(sql)
+    data=data.set_index('ticket_id')
+    st.dataframe(data)
+    print(data)
+    fig=plt.figure()
+    plt.plot(data['penalty'], 'r--', data['amount'], 'bs', data['profit'] 'g^')
+    st.plotly_chart(fig)
+    
 def showFeedback(user):
     sql =''
     if user['domain'][0] == 'issue_reporter':
@@ -175,7 +181,8 @@ def createticket(user_id):
 
       
 def updatestatus(user):
-    sql = f"""select tickets.ticket_id,ticket_status.status, tickets.title from tickets,ticket_status where tickets.status_id = ticket_status.id and assigned_to_id  = {str(user['id'][0])};"""
+    sql = f"""select tickets.ticket_id,ticket_status.status, tickets.title 
+    from tickets,ticket_status where tickets.status_id = ticket_status.id and assigned_to_id  = {str(user['id'][0])};"""
 
     data = query_db(sql)
     tickets=[]
@@ -215,7 +222,10 @@ def visualize_tickets(user):
         
         selT=st.selectbox('Select Ticket for a graph:',tickets)
         selT=selT.split(":")[0]
-    sql= f"""select issue_reporter.name as reporter,temp.title,temp.issuer_id as issuer_id,temp.emp_id,temp.emp_name from (select t.issuer_id,t.title,t.assigned_to_id as emp_id,e.name as emp_name from tickets t,employees e where e.id = t.assigned_to_id and t.ticket_id={selT}) temp, issue_reporter where issue_reporter.id=temp.issuer_id;"""
+    sql= f"""select issue_reporter.name as reporter,temp.title,temp.issuer_id as 
+    issuer_id,temp.emp_id,temp.emp_name from (select t.issuer_id,t.title,t.assigned_to_id as 
+    emp_id,e.name as emp_name from tickets t,employees e where e.id = t.assigned_to_id and t.ticket_id={selT}) 
+    temp, issue_reporter where issue_reporter.id=temp.issuer_id;"""
     data = query_db(sql)
     st.dataframe(data)
     graph = graphviz.Digraph()
