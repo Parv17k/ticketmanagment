@@ -205,6 +205,7 @@ def dashboard_employee(user_data):
     head.title("Employee Dashboard")
     st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
     show_tickets(user_data)
+<<<<<<< HEAD
     st.write("I am up")
     
     updatestatus(user_data)
@@ -212,6 +213,13 @@ def dashboard_employee(user_data):
     if st.button('show feedback table for the user'):
         showFeedback(user_data)
     
+=======
+    if st.button('show feedback table for the user'):
+        showFeedback(user_data)
+    if st.button('update any ticket status'):
+        updatestatus(user_data)
+
+>>>>>>> fa7f8d1e17db1133d200ca563e6972653816517f
 def dashboard_management(user_data):
     head.title("Management Dashboard")
     st.success("Hello '"+user_data['name'][0]+"', Please scroll down and access your dashboard")
@@ -266,3 +274,17 @@ else:
 
 
 
+<<<<<<< HEAD
+=======
+'## Read tables'
+
+sql_all_table_names = "select relname from pg_class where relkind='r' and relname !~ '^(pg_|sql_)';"
+all_table_names = query_db(sql_all_table_names)['relname'].tolist()
+table_name = st.selectbox('Choose a table', all_table_names)
+if table_name:
+    f'Display the table'
+
+    sql_table = f'select * from {table_name};'
+    df = query_db(sql_table)
+    st.dataframe(df)
+>>>>>>> fa7f8d1e17db1133d200ca563e6972653816517f
