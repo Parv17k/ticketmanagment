@@ -40,6 +40,7 @@ def query_db(sql: str,flag= False):
         
             column_names = [desc[0] for desc in cur.description]
             df = pd.DataFrame(data=data, columns=column_names)
+            df = df.replace({pd.np.nan: None})
             return df
         return "done"       
         
@@ -101,7 +102,7 @@ def showFeedback(user):
          where ms_id in (select id from management_system where managerid = {str(user["id"][0])}));"""
     
     data=query_db(sql)
-    st.table(data)
+    st.dataframe(data)
 
 
 def load_tickets(user):
@@ -186,12 +187,10 @@ def updatestatus(user):
         else: st.error('error occured in SQL')
         
 def update_employee(user):
-    
     sql = f"""select ticket_id ,title  from tickets where assigned_to_id is null and 
             ms_id in (select id from management_system where managerid = {str(user['id'][0])});"""
-    
     data = query_db(sql)
-    if df.empty== False :
+    if data.empty== False :
         st.subheader('Ticket that dont have any employee assigned')
         tickets=[]
         for t in data.values.tolist():
@@ -300,6 +299,4 @@ if table_name:
 
     sql_table = f'select * from {table_name};'
     df = query_db(sql_table)
-   # print(df.head(1))
-    st.write(df.head(1))
     st.dataframe(df)
