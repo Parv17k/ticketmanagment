@@ -51,6 +51,15 @@ def query_db(sql: str,flag= False):
         cur.execute("ROLLBACK")
         conn.commit()
     return None
+
+def show_ms_profit():
+    st.title("Profit/Loss Overview : All Departement")
+    sql="""
+    select sum(amount - penalty) as profit_dept, int.name from costs,(select t.ticket_id,m.name as name from tickets t,management_system m where m.id=t.ms_id ) int where int.ticket_id=costs.ticket_id group by int.name;
+    """
+    data=query_db(sql)
+    st.dataframe(data)
+
 def show_cost(user):
     st.title("Cost Overview : for your Management Systems")
     sql = f"""
@@ -255,6 +264,7 @@ def dashboard_management(user_data):
     if st.button('show feedback table for the user'):
         showFeedback(user_data)
     show_cost(user_data)
+    show_ms_profit()
 
 def auth(id,password,domain):
 
