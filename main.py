@@ -48,7 +48,7 @@ def query_db(sql: str,flag= False):
     return None
 
 def show_ms_profit():
-    st.title("Profit/Loss Overview : All Departement")
+    st.title("Profit/Loss Overview : All Departement with tickets")
     sql="""
     select sum(amount - penalty) as profit_dept, int.name from costs,(select t.ticket_id,m.name as name from tickets t,management_system m where m.id=t.ms_id ) int where int.ticket_id=costs.ticket_id group by int.name;
     """
@@ -66,8 +66,6 @@ def show_cost(user):
     data=query_db(sql)
     data=data.set_index('ticket_id')
     st.dataframe(data)
-    print(data)
-    st.line_chart(data)
 @st.cache(allow_output_mutation=True)
 def createConnection():
     try:
@@ -217,11 +215,14 @@ def visualize_tickets(user):
         selT=selT.split(":")[0]
     sql= f"""select issue_reporter.name as reporter,temp.title,temp.issuer_id as issuer_id,temp.emp_id,temp.emp_name from (select t.issuer_id,t.title,t.assigned_to_id as emp_id,e.name as emp_name from tickets t,employees e where e.id = t.assigned_to_id and t.ticket_id={selT}) temp, issue_reporter where issue_reporter.id=temp.issuer_id;"""
     data = query_db(sql)
-    st.dataframe(data)
-    graph = graphviz.Digraph()
-    graph.edge("reporter - "+str(data['reporter'][0]),"ticket - "+ str(data['title'][0]))
-    graph.edge("worker - "+str(data['emp_name'][0]), "ticket - "+str(data['title'][0]))
-    st.graphviz_chart(graph)
+    if data.empty == False:
+        st.dataframe(data)
+        graph = graphviz.Digraph()
+        graph.edge("reporter - "+str(data['reporter'][0]),"ticket - "+ str(data['title'][0]))
+        graph.edge("worker - "+str(data['emp_name'][0]), "ticket - "+str(data['title'][0]))
+        st.graphviz_chart(graph)
+    else:
+         st.error("Can not create a graph with this ticket,Please assign a worker or check the ticket")
     
 
 def update_employee(user):
@@ -288,7 +289,6 @@ def auth(id,password,domain):
     query="SELECT * from "+domain+" where id="+id+" and password = '"+password+"';"
     try:
         df= query_db(query)
-
         return df
     except Exception as error:
         st.write("Error Occured",error)
@@ -306,8 +306,9 @@ if session_state.id == 0:
 
     if st.button('Login'):
         result = auth(user_id, user_password,option)
+        print(result)
         #print("Here is auth data",result)
-        if result is not None :
+        if result.empty == False :
             result['domain']=option
             session_state.id=result['id'][0]
             session_state.data=result
@@ -319,7 +320,7 @@ if session_state.id == 0:
                 dashboard_management(result)
         
         else:
-            st.write("Please check your Credentials!")
+            st.error("Please check your Credentials!")
 else:
     if "employees" == session_state.data["domain"][0]:
         dashboard_employee(session_state.data)
