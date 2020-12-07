@@ -3,10 +3,10 @@ import streamlit as st
 import psycopg2 
 import datetime
 import numpy as np
-import graphviz as graphviz
+#import graphviz as graphviz
 from configparser import ConfigParser
 import SessionState
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 session_state = SessionState.get(id=0,data=pd.DataFrame())
 head=st.title("")
@@ -126,15 +126,15 @@ def show_cost(user):
     data=query_db(sql)
     data=data.set_index('ticket_id')
     st.dataframe(data)
-    X = np.arange(4)
-    fig = plt.figure()
-    ax = fig.add_axes(data)
-    ax.bar(X + 0.00, data['amount'], color = 'b', width = 0.25)
-    ax.bar(X + 0.25, data['profit'], color = 'g', width = 0.25)
-    ax.bar(X + 0.50, data['penalty'], color = 'r', width = 0.25)
+   # X = np.arange(4)
+    #fig = plt.figure()
+    #ax = fig.add_axes(data)
+    #ax.bar(X + 0.00, data['amount'], color = 'b', width = 0.25)
+    #ax.bar(X + 0.25, data['profit'], color = 'g', width = 0.25)
+    #ax.bar(X + 0.50, data['penalty'], color = 'r', width = 0.25)
     #plt.plot(data['penalty'], 'r--', data['amount'], 'bs', data['profit'], 'g^')
     
-    st.pyplot(fig)
+    #st.pyplot(fig)
     
 def showFeedback(user):
     sql =''
@@ -257,10 +257,10 @@ def visualize_tickets(user):
     data = query_db(sql)
     if data.empty == False:
         st.dataframe(data)
-        graph = graphviz.Digraph()
-        graph.edge("reporter - "+str(data['reporter'][0]),"ticket - "+ str(data['title'][0]))
-        graph.edge("worker - "+str(data['emp_name'][0]), "ticket - "+str(data['title'][0]))
-        st.graphviz_chart(graph)
+      #  graph = graphviz.Digraph()
+      #  graph.edge("reporter - "+str(data['reporter'][0]),"ticket - "+ str(data['title'][0]))
+      #  graph.edge("worker - "+str(data['emp_name'][0]), "ticket - "+str(data['title'][0]))
+      #  st.graphviz_chart(graph)
     else:
          st.error("Can not create a graph with this ticket,Please assign a worker or check the ticket")
     
