@@ -109,10 +109,15 @@ def show_cost(user):
     data=query_db(sql)
     data=data.set_index('ticket_id')
     st.dataframe(data)
-    print(data)
-    fig=plt.figure()
-    plt.plot(data['penalty'], 'r--', data['amount'], 'bs', data['profit'], 'g^')
-    st.plotly_chart(fig)
+    X = np.arange(4)
+    fig = plt.figure()
+    ax = fig.add_axes(data)
+    ax.bar(X + 0.00, data['amount'], color = 'b', width = 0.25)
+    ax.bar(X + 0.25, data['profit'], color = 'g', width = 0.25)
+    ax.bar(X + 0.50, data['penalty'], color = 'r', width = 0.25)
+    #plt.plot(data['penalty'], 'r--', data['amount'], 'bs', data['profit'], 'g^')
+    
+    st.pyplot(fig)
     
 def showFeedback(user):
     sql =''
