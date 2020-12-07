@@ -3,3 +3,5 @@ streamlit==0.71.0
 psycopg2==2.8.6
 ConfigParser
 graphviz
+matplotlib
+plotly
