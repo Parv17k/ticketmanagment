@@ -225,9 +225,13 @@ def updatestatus(user):
     selS=st.selectbox(ent,statuss)
     if st.button('update status'):
         selS=selS.split(":")[0]
+        temp = int(selS)
         selT=selT.split(":")[0]
         sq=f"update tickets set status_id ={selS} where ticket_id ={selT};"
+        if temp == 6:
+            sq=f"""update tickets set end_time ='{datetime.datetime.now()}',resolution_sla='{datetime.datetime.now()}',status_id ={selS} where ticket_id ={selT};"""
         result= query_db(sq,True)
+        print(sq)
         if result=='done':
             st.success('Ticket is updated')
         else: st.error('error occured in SQL')
